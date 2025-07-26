@@ -45,12 +45,14 @@ class SearchActivity : AppCompatActivity() {
                 val query = s.toString().trim()
                 if (query.length < 2) return
 
+                // User is typing, reset selection state
                 userSelectedFromDropdown = false
+
                 searchJob?.cancel()
                 searchJob = lifecycleScope.launch {
                     delay(300) // debounce
                     try {
-                        val api = RetrofitGeoClient.geoApi
+                        val api = RetrofitClient.geoApi
                         val results = api.getCoordinatesByCity(query, 5, BuildConfig.OPENWEATHER_API_KEY)
 
                         latestCityList = results.map {
@@ -59,11 +61,7 @@ class SearchActivity : AppCompatActivity() {
 
                         withContext(Dispatchers.Main) {
                             if (!userSelectedFromDropdown) {
-                                val adapter = ArrayAdapter(
-                                    this@SearchActivity,
-                                    android.R.layout.simple_dropdown_item_1line,
-                                    latestCityList
-                                )
+                                val adapter = ArrayAdapter(this@SearchActivity, android.R.layout.simple_dropdown_item_1line, latestCityList)
                                 searchText.setAdapter(adapter)
                                 searchText.showDropDown()
                             }
@@ -72,11 +70,7 @@ class SearchActivity : AppCompatActivity() {
                     } catch (e: Exception) {
                         Log.e("SearchActivity", "City fetch failed: ${e.message}", e)
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(
-                                this@SearchActivity,
-                                "Error fetching suggestions",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            Toast.makeText(this@SearchActivity, "Error fetching suggestions", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -85,6 +79,7 @@ class SearchActivity : AppCompatActivity() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
+
 
         searchText.setOnEditorActionListener { _, actionId, event ->
             val isDone = actionId == EditorInfo.IME_ACTION_DONE
@@ -118,6 +113,7 @@ class SearchActivity : AppCompatActivity() {
         backArrow.setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
+
     }
 
     private fun handleCitySelection() {

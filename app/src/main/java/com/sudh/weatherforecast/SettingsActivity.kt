@@ -16,6 +16,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var sharedPreferences: SharedPreferences
 
+
     private lateinit var spinnerTempUnit: Spinner
     private lateinit var spinnerWindUnit: Spinner
     private lateinit var spinnerAirPressureUnit: Spinner
@@ -24,7 +25,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var spinnerBackgroundType: Spinner
 
     private lateinit var switchSevereWarnings: SwitchCompat
-    private lateinit var switchRainAlerts: SwitchCompat
+    private lateinit var  switchRainAlerts: SwitchCompat
     private lateinit var switchDailyForecast: SwitchCompat
 
     companion object {
@@ -49,29 +50,34 @@ class SettingsActivity : AppCompatActivity() {
         sharedPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
         val backButton: ImageView = findViewById(R.id.backButton)
-        backButton.setOnClickListener {
-            onBackPressedDispatcher.onBackPressed()
-        }
 
-        // Initialize all spinners
+
         spinnerTempUnit = findViewById(R.id.spinnerTempUnit)
         spinnerWindUnit = findViewById(R.id.spinnerWindUnit)
         spinnerAirPressureUnit = findViewById(R.id.spinnerAirPressureUnit)
         spinnerVisibilityUnit = findViewById(R.id.spinnerVisibilityUnit)
+        spinnerThemeMode = findViewById(R.id.spinnerThemeMode)
+        spinnerBackgroundType = findViewById(R.id.spinnerBackgroundType)
 
 
-        // Initialize all switches
         switchSevereWarnings = findViewById(R.id.switchSevereWarnings)
         switchRainAlerts = findViewById(R.id.switchRainAlerts)
         switchDailyForecast = findViewById(R.id.switchDailyForecast)
 
-        // Setup spinners
+
+        backButton.setOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
+
+
         setupSpinner(spinnerTempUnit, R.array.temperature_units, KEY_TEMP_UNIT)
         setupSpinner(spinnerWindUnit, R.array.wind_units, KEY_WIND_UNIT)
         setupSpinner(spinnerAirPressureUnit, R.array.air_pressure_units, KEY_AIR_PRESSURE_UNIT)
         setupSpinner(spinnerVisibilityUnit, R.array.visibility_units, KEY_VISIBILITY_UNIT)
+        setupSpinner(spinnerThemeMode, R.array.theme_modes, KEY_THEME_MODE)
+        setupSpinner(spinnerBackgroundType, R.array.background_types, KEY_BACKGROUND_TYPE)
 
-        // Setup switches
+
         setupSwitch(switchSevereWarnings, KEY_SEVERE_WARNINGS_ENABLED)
         setupSwitch(switchRainAlerts, KEY_RAIN_ALERTS_ENABLED)
         setupSwitch(switchDailyForecast, KEY_DAILY_FORECAST_ENABLED)
@@ -91,17 +97,21 @@ class SettingsActivity : AppCompatActivity() {
 
         spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+
                 sharedPreferences.edit().putInt(prefKey, position).apply()
+
 
                 val selectedItem = parent.getItemAtPosition(position).toString()
                 Toast.makeText(this@SettingsActivity, "${prefKey.formatKey()}: $selectedItem", Toast.LENGTH_SHORT).show()
             }
 
-            override fun onNothingSelected(parent: AdapterView<*>) {}
+            override fun onNothingSelected(parent: AdapterView<*>) {
+            }
         }
     }
 
     private fun setupSwitch(switchCompat: SwitchCompat, prefKey: String) {
+        // Load saved state
         val savedState = sharedPreferences.getBoolean(prefKey, false)
         switchCompat.isChecked = savedState
 
@@ -115,6 +125,6 @@ class SettingsActivity : AppCompatActivity() {
     private fun String.formatKey(): String {
         return this.replace("_", " ")
             .split(" ")
-            .joinToString(" ") { word -> word.replaceFirstChar { it.uppercase() } }
+            .joinToString(" ") { word -> word.replaceFirstChar { it.uppercase() } } // Capitalize first letter of each word
     }
 }

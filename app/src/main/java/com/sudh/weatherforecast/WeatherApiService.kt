@@ -1,6 +1,5 @@
 package com.sudh.weatherforecast
 
-import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Query
 
@@ -9,23 +8,31 @@ interface WeatherApiService {
     suspend fun getCurrentWeather(
         @Query("lat") lat: Double,
         @Query("lon") lon: Double,
-        @Query("units") units: String = "metric",
+        @Query("units") units: String = "metric",       // Celsius
         @Query("appid") apiKey: String
-    ): Response<WeatherResponse>
+    ): WeatherResponse
 
-    @GET("data/2.5/forecast/climate")
-    suspend fun getForecastData(
+    @GET("data/2.5/forecast/daily")
+    suspend fun get7DayForecast(
         @Query("lat") lat: Double,
         @Query("lon") lon: Double,
-        @Query("cnt") cnt: Int = 7,
-        @Query("units") units: String = "metric",
-        @Query("appid") apiKey: String
-    ): Response<ForecastResponse>
+        @Query("appid") apiKey: String,
+        @Query("cnt") cnt: Int = 9, // Get 9-day forecast
+        @Query("units") units: String = "metric" // Celsius
+    ): ForecastResponse
 
     @GET("geo/1.0/direct")
     suspend fun getCoordinatesByCity(
         @Query("q") cityName: String,
         @Query("limit") limit: Int = 5,
         @Query("appid") apiKey: String
-    ): Response<List<GeocodingResponseItem>>
+    ): List<GeoCodingResponseItem>
+
+    @GET("data/2.5/air_pollution")
+    suspend fun getAirQuality(
+        @Query("lat") lat: Double,
+        @Query("lon") lon: Double,
+        @Query("appid") apiKey: String
+    ): AirQualityResponse
+
 }

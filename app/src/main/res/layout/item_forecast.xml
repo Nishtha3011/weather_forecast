@@ -3,32 +3,42 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="16dp"
-    android:gravity="center_vertical">
+    android:paddingVertical="16dp"
+    android:paddingHorizontal="20dp"
+    android:layout_marginBottom="12dp"
+    android:gravity="center_vertical"
+    android:background="@drawable/bg_card_50_light"
+    android:elevation="4dp">
 
     <TextView
-        android:id="@+id/dayText"
+        android:id="@+id/dayName"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="30dp"
         android:layout_weight="1"
         android:text="SAT"
         android:textColor="@android:color/white"
+        android:gravity="center"
         android:textSize="16sp"
         android:textStyle="bold" />
 
     <ImageView
-        android:id="@+id/icon"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
+        android:id="@+id/dayIcon"
+        android:layout_width="0dp"
+        android:layout_height="30dp"
         android:src="@drawable/ic_weather_icon"
+        android:layout_gravity="center"
+        android:layout_weight="1"
         android:layout_marginHorizontal="16dp"
         android:contentDescription="Weather Icon" />
 
     <TextView
-        android:id="@+id/tempText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="23° / 29°"
+        android:id="@+id/dayTemp"
+        android:layout_width="0dp"
+        android:layout_height="30dp"
+        android:text="29°/34°"
+        android:layout_weight="1"
+        android:gravity="center"
         android:textColor="@android:color/white"
-        android:textSize="16sp" />
+        android:textSize="16sp"
+        android:textStyle="bold" />
 </LinearLayout>

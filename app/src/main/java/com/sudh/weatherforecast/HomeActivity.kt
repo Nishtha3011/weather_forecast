@@ -1,141 +1,138 @@
 package com.sudh.weatherforecast
 
-import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
+import android.view.GestureDetector
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
 
 class HomeActivity : AppCompatActivity() {
 
-    private lateinit var sharedPreferences: SharedPreferences
-
-    private lateinit var cityTextView: TextView
-    private lateinit var temperatureTextView: TextView
-    private lateinit var weatherConditionTextView: TextView
-    private lateinit var humidityTextView: TextView
-    private lateinit var windSpeedTextView: TextView
-    private lateinit var weatherIconImageView: ImageView
-
-    private lateinit var navSettingsButton: ImageButton
+    private lateinit var gestureDetector: GestureDetector
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_home)
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.home_root_layout_id)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
 
-        sharedPreferences = getSharedPreferences("WeatherPreferences", Context.MODE_PRIVATE)
 
-        cityTextView = findViewById(R.id.city)
-        temperatureTextView = findViewById(R.id.temperature)
-        weatherConditionTextView = findViewById(R.id.descriptiontxt)
-        humidityTextView = findViewById(R.id.humidity)
-        windSpeedTextView = findViewById(R.id.windspeed)
-        weatherIconImageView = findViewById(R.id.topicon)
+        // Get city name
+        val cityName = intent.getStringExtra("city_name")
+        Toast.makeText(this, "City: $cityName", Toast.LENGTH_LONG).show()
+        val cityTextView = findViewById<TextView>(R.id.city)
+        cityTextView.text = cityName ?: "Delhi"
 
-        navSettingsButton = findViewById(R.id.navSettings)
 
-        navSettingsButton.setOnClickListener {
-            startActivity(Intent(this, SettingsActivity::class.java))
-        }
-
-        val city = sharedPreferences.getString("city", "Chennai") ?: "Chennai"
-        cityTextView.text = city
-        fetchWeatherData(city)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        val currentCity = sharedPreferences.getString("city", "Chennai") ?: "Chennai"
-        if (cityTextView.text.toString() != currentCity) {
-            cityTextView.text = currentCity
-        }
-        fetchWeatherData(currentCity)
-    }
-
-    private fun fetchWeatherData(city: String) {
-        val retrofit = Retrofit.Builder()
+        // Retrofit setup
+        val retrofit=Retrofit.Builder()
             .baseUrl("https://api.openweathermap.org/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
-        val api = retrofit.create(WeatherApiService::class.java)
-        val unitPref = sharedPreferences.getString("unit", "celsius") ?: "celsius"
-        val apiUnit = if (unitPref == "celsius") "metric" else "imperial"
-        val apiKey = BuildConfig.OPENWEATHER_API_KEY
 
+        val api = retrofit.create(WeatherApiService::class.java)
+
+        // Network call
+        // Coroutine for network call
         lifecycleScope.launch {
             try {
-                // Corrected: Get the Response and then extract the body
-                val geoResponse = api.getCoordinatesByCity(city, 1,apiKey)
-                val geoList = geoResponse.body() // Extract the list from the Response body
+                val apiKey = BuildConfig.OPENWEATHER_API_KEY
 
-                if (geoList.isNullOrEmpty()) {
-                    Toast.makeText(this@HomeActivity, "City not found", Toast.LENGTH_SHORT).show()
-                    resetWeatherUI()
-                    return@launch
-                }
+                val geoList = api.getCoordinatesByCity(cityName ?: "Delhi", apiKey = apiKey)
 
-                val lat = geoList[0].lat
-                val lon = geoList[0].lon
+                if (geoList.isNotEmpty()) {
+                    val lat = geoList[0].lat
+                    val lon = geoList[0].lon
+                    Log.d("DEBUG", "Calling weather API with lat=$lat, lon=$lon")
 
-                val weatherResponse = api.getCurrentWeather(lat, lon, apiUnit, apiKey)
-                val weather = weatherResponse.body()
+                    Log.d("DEBUG", "Coordinates: lat=$lat, lon=$lon")
 
-                if (weather != null) {
-                    updateUI(weather, unitPref)
+                    val weather = api.getCurrentWeather(lat, lon, "metric", apiKey)
+
+                    Log.d("DEBUG", "Weather response: $weather")
+
+
+
+                    // Set values to UI
+                    val tempTextView = findViewById<TextView>(R.id.temperature)
+                    tempTextView.text = "${weather.main.temp}°C"
+
+                    val humidity = findViewById<TextView>(R.id.humidity)
+                    humidity.text = "${weather.main.humidity}%"
+
+                    val windspeed = findViewById<TextView>(R.id.windspeed)
+                    windspeed.text = "${weather.wind.speed}km/h"
+
+                    val feels_like=findViewById<TextView>(R.id.feels_like_value)
+                    feels_like.text="${weather.main.feels_like}°C"
+
+                    //weather description
+                    val description=findViewById<TextView>(R.id.descriptiontxt)
+                    description.text="${weather.weather[0].description}"//make first letter capital
+                    //icons
+                    val iconCode = weather.weather[0].icon
+                    val iconUrl = "https://openweathermap.org/img/wn/${iconCode}@2x.png"
+                    val icon=findViewById<ImageView>(R.id.topicon)
+
+                    Glide.with(this@HomeActivity)
+                        .load(iconUrl)
+                        .into(icon)
+
+
+
                 } else {
-                    Toast.makeText(this@HomeActivity, "Weather data not available", Toast.LENGTH_SHORT).show()
-                    resetWeatherUI()
+                    Log.e("DEBUG", "geoList is empty")
+                    Toast.makeText(this@HomeActivity, "City not found", Toast.LENGTH_SHORT).show()
                 }
 
             } catch (e: Exception) {
-                Log.e("HomeActivity", "Error fetching weather: ${e.message}")
-                Toast.makeText(this@HomeActivity, "Failed to load weather", Toast.LENGTH_SHORT).show()
-                resetWeatherUI()
+                Log.e("DEBUG", "API error: ${e.message}")
+
             }
+
         }
-    }
+        //current date
+        val dateTextView=findViewById<TextView>(R.id.datetxt)
+        val date=SimpleDateFormat("dd , MMMM",Locale.getDefault()).format(Date())
+        dateTextView.text=date
+        //navigation buttons
+        val week_btn=findViewById<ImageButton>(R.id.navWeek)
+        week_btn.setOnClickListener {
+            val intent = Intent(this, WeeklyActivity::class.java)
+            intent.putExtra("city_name", cityName)
+            startActivity(intent)
 
-    private fun updateUI(weather: WeatherResponse, unitPref: String) {
-        val temp = WeatherConverter.convertTemperature(weather.main.temp, unitPref)
-        val windSpeedUnit = if (unitPref == "celsius") "km/h" else "mph"
-        val windSpeed = if (unitPref == "celsius") (weather.wind.speed * 3.6) else weather.wind.speed
+        }
+        val settings_btn=findViewById<ImageButton>(R.id.navSettings)
+        settings_btn.setOnClickListener {
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
 
-        temperatureTextView.text = temp
-        humidityTextView.text = "Humidity: ${weather.main.humidity}%"
-        windSpeedTextView.text = "Wind: ${"%.1f".format(windSpeed)} $windSpeedUnit"
-        weatherConditionTextView.text = weather.weather[0].description.replaceFirstChar { it.uppercaseChar() }
+        }
+        val search_btn=findViewById<ImageButton>(R.id.navSearch)
+        search_btn.setOnClickListener {
+            val intent = Intent(this, SearchActivity::class.java)
+            startActivity(intent)
 
-        val iconCode = weather.weather[0].icon
-        val iconUrl = "https://openweathermap.org/img/wn/${iconCode}@2x.png"
-        Glide.with(this).load(iconUrl).into(weatherIconImageView)
-    }
+        }
 
-    private fun resetWeatherUI() {
-        temperatureTextView.text = "--"
-        humidityTextView.text = "Humidity: --%"
-        windSpeedTextView.text = "Wind: --"
-        weatherConditionTextView.text = "--"
-        weatherIconImageView.setImageResource(R.drawable.ic_weather_icon)
+
+
+
     }
 }

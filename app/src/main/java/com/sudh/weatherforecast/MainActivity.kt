@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
+        //If a city was already selected earlier, go to Home directly
         val prefs = getSharedPreferences("weather_prefs", MODE_PRIVATE)
         val savedCity = prefs.getString("city_name", null)
         if (!savedCity.isNullOrEmpty()) {
@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity() {
         cityInput = findViewById(R.id.cityInput)
         nextButton = findViewById(R.id.nextButton)
 
-        cityInput.threshold = 1
+        cityInput.threshold = 1 //show suggestions after 1 char (dheela hai?)
         cityInput.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
                 val query = s.toString().trim()
@@ -44,48 +44,26 @@ class MainActivity : AppCompatActivity() {
 
                 searchJob?.cancel()
                 searchJob = lifecycleScope.launch {
-                    delay(300) // Debounce user input
+                    delay(300) //ensuring it doesn't get presses too often
 
                     try {
-                        val api = RetrofitGeoClient.geoApi
-                        val response = api.getCoordinatesByCity(
-                            cityName = query,
-                            limit = 5,
-                            apiKey = BuildConfig.OPENWEATHER_API_KEY
-                        )
+                        val api = RetrofitClient.geoApi
+                        val results = api.getCoordinatesByCity(query, 5, BuildConfig.OPENWEATHER_API_KEY)
 
-                        if (response.isSuccessful && response.body() != null) {
-                            val results = response.body()!!
-                            latestCityList = results.map {
-                                if (it.country.isNotEmpty()) "${it.name}, ${it.country}" else it.name
-                            }
+                        latestCityList = results.map {
+                            if (it.country.isNotEmpty()) "${it.name}, ${it.country}" else it.name
+                        }
 
-                            withContext(Dispatchers.Main) {
-                                val adapter = ArrayAdapter(
-                                    this@MainActivity,
-                                    android.R.layout.simple_dropdown_item_1line,
-                                    latestCityList
-                                )
-                                cityInput.setAdapter(adapter)
-                                cityInput.showDropDown()
-                            }
-                        } else {
-                            withContext(Dispatchers.Main) {
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    "No results found",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
+                        withContext(Dispatchers.Main) {
+                            val adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_dropdown_item_1line, latestCityList)
+                            cityInput.setAdapter(adapter)
+                            cityInput.showDropDown()
                         }
 
                     } catch (e: Exception) {
+                        //for whtv reason if fetching fails
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(
-                                this@MainActivity,
-                                "Error fetching suggestions",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            Toast.makeText(this@MainActivity, "Error fetching suggestions", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -96,6 +74,7 @@ class MainActivity : AppCompatActivity() {
         })
 
         cityInput.setOnEditorActionListener { _, actionId, event ->
+            //handles both keyboard enter and and the on-screen enter
             val isDone = actionId == EditorInfo.IME_ACTION_DONE
             val isEnter = event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN
             if (isDone || isEnter) {
@@ -124,7 +103,7 @@ class MainActivity : AppCompatActivity() {
                     delay(300)
 
                     try {
-                        val api = RetrofitGeoClient.geoApi
+                        val api = RetrofitClient.geoApi
                         val results = api.getCoordinatesByCity(query, 5, BuildConfig.OPENWEATHER_API_KEY)
 
                         latestCityList = results.map {
@@ -163,6 +142,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        //make the user select a city from dropdown
         if (!latestCityList.contains(input)) {
             Toast.makeText(this, "Please select a valid city from dropdown", Toast.LENGTH_SHORT).show()
             return
