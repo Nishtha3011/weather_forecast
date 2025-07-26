@@ -7,7 +7,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.sudh.weatherforecast.models.ForecastDay
 
 class WeeklyAdapter(private val forecastList: List<ForecastDay>) :
     RecyclerView.Adapter<WeeklyAdapter.WeeklyViewHolder>() {
@@ -19,15 +18,15 @@ class WeeklyAdapter(private val forecastList: List<ForecastDay>) :
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WeeklyViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_forecast, parent, false)
+        //inflate the individual cards
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_forecast, parent, false)
         return WeeklyViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: WeeklyViewHolder, position: Int) {
         val daily = forecastList[position]
 
-        // Set abbreviated day (e.g. MON, TUE, ...)
+        // Set abbreviated day
         val dayName = java.text.SimpleDateFormat("EEE", java.util.Locale.getDefault())
             .format(java.util.Date(daily.dt * 1000L))
             .uppercase() // Converts to MON, TUE, etc.

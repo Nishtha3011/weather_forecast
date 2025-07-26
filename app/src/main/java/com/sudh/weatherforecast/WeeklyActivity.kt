@@ -39,11 +39,13 @@ class WeeklyActivity : AppCompatActivity() {
                     val forecast = api.get7DayForecast(lat, lon, apiKey, 9, "metric")
                     val tomorrowForecast = forecast.list[1]
 
+                    //usual things (copied from home)
                     findViewById<TextView>(R.id.temperature).text = "${tomorrowForecast.temp.day}°C"
                     findViewById<TextView>(R.id.humidity).text = "${tomorrowForecast.humidity}%"
                     findViewById<TextView>(R.id.windspeed).text = "${tomorrowForecast.speed} km/h"
                     findViewById<TextView>(R.id.feels_like_value).text = "${tomorrowForecast.feels_like.day}°C"
 
+                    //weather condition
                     val desc = tomorrowForecast.weather.firstOrNull()?.description?.replaceFirstChar { it.uppercase() } ?: "--"
                     findViewById<TextView>(R.id.descriptiontxt).text = desc
 

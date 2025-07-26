@@ -14,7 +14,6 @@ data class Main(
     val humidity: Int,
     val temp_min:Double,
     val temp_max:Double
-
 )
 
 data class Weather(

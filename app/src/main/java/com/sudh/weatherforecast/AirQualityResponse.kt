@@ -5,7 +5,10 @@ data class AirQualityResponse(
     val list: List<AirData>
 )
 
-data class Coordinates(val lon: Double, val lat: Double)
+data class Coordinates(
+    val lon: Double,
+    val lat: Double
+)
 
 data class AirData(
     val main: MainAQI,
@@ -13,7 +16,9 @@ data class AirData(
     val dt: Long
 )
 
-data class MainAQI(val aqi: Int)
+data class MainAQI(
+    val aqi: Int
+)
 
 data class Components(
     val co: Double,
