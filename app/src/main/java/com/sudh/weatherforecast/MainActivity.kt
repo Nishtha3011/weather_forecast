@@ -8,6 +8,7 @@ import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.*
 
@@ -156,7 +157,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startHome(cityName: String) {
-        val intent = Intent(this, HomeActivity::class.java)
+        val intent = Intent(this, WeatherActivity::class.java)
         intent.putExtra("city_name", cityName)
         startActivity(intent)
         finish()

@@ -24,10 +24,7 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".HomeActivity" />
-        <activity android:name=".SearchActivity" />
-        <activity android:name=".WeeklyActivity" />
-        <activity android:name=".SettingsActivity" />
+        <activity android:name=".WeatherActivity" />
     </application>
 
 </manifest>

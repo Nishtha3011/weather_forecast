@@ -7,17 +7,16 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
-import android.view.KeyEvent
-import android.view.MotionEvent
+import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.*
 import java.util.*
 
-class SearchActivity : AppCompatActivity() {
+class SearchFragment : Fragment() {
 
     private lateinit var searchText: AutoCompleteTextView
     private lateinit var recentContainer: LinearLayout
@@ -26,12 +25,18 @@ class SearchActivity : AppCompatActivity() {
     private var searchJob: Job? = null
     private var userSelectedFromDropdown = false
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_search)
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        return inflater.inflate(R.layout.fragment_search, container, false)
+    }
 
-        searchText = findViewById(R.id.searchText)
-        recentContainer = findViewById(R.id.recentSearchContainer)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        searchText = view.findViewById(R.id.searchText)
+        recentContainer = view.findViewById(R.id.recentSearchContainer)
 
         searchText.threshold = 1
 
@@ -45,11 +50,9 @@ class SearchActivity : AppCompatActivity() {
                 val query = s.toString().trim()
                 if (query.length < 2) return
 
-                // User is typing, reset selection state
                 userSelectedFromDropdown = false
-
                 searchJob?.cancel()
-                searchJob = lifecycleScope.launch {
+                searchJob = viewLifecycleOwner.lifecycleScope.launch {
                     delay(300) // debounce
                     try {
                         val api = RetrofitClient.geoApi
@@ -61,16 +64,20 @@ class SearchActivity : AppCompatActivity() {
 
                         withContext(Dispatchers.Main) {
                             if (!userSelectedFromDropdown) {
-                                val adapter = ArrayAdapter(this@SearchActivity, android.R.layout.simple_dropdown_item_1line, latestCityList)
+                                val adapter = ArrayAdapter(
+                                    requireContext(),
+                                    android.R.layout.simple_dropdown_item_1line,
+                                    latestCityList
+                                )
                                 searchText.setAdapter(adapter)
                                 searchText.showDropDown()
                             }
                         }
 
                     } catch (e: Exception) {
-                        Log.e("SearchActivity", "City fetch failed: ${e.message}", e)
+                        Log.e("SearchFragment", "City fetch failed: ${e.message}", e)
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(this@SearchActivity, "Error fetching suggestions", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(requireContext(), "Error fetching suggestions", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -79,7 +86,6 @@ class SearchActivity : AppCompatActivity() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
-
 
         searchText.setOnEditorActionListener { _, actionId, event ->
             val isDone = actionId == EditorInfo.IME_ACTION_DONE
@@ -109,23 +115,21 @@ class SearchActivity : AppCompatActivity() {
 
         updateRecentUI(recentContainer, recentList, searchText)
 
-        val backArrow = findViewById<ImageView>(R.id.backButton)
-        backArrow.setOnClickListener {
-            onBackPressedDispatcher.onBackPressed()
+        view.findViewById<ImageView>(R.id.backButton).setOnClickListener {
+            requireActivity().onBackPressedDispatcher.onBackPressed()
         }
-
     }
 
     private fun handleCitySelection() {
         val input = searchText.text.toString().trim()
 
         if (input.isEmpty()) {
-            Toast.makeText(this, "Please enter a city name", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Please enter a city name", Toast.LENGTH_SHORT).show()
             return
         }
 
         if (!latestCityList.contains(input)) {
-            Toast.makeText(this, "Please select a valid city from dropdown", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Please select a valid city from dropdown", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -141,25 +145,25 @@ class SearchActivity : AppCompatActivity() {
         searchText.setText("")
         updateRecentUI(recentContainer, recentList, searchText)
 
-        getSharedPreferences("weather_prefs", MODE_PRIVATE).edit()
+        requireContext().getSharedPreferences("weather_prefs", Activity.MODE_PRIVATE).edit()
             .putString("city_name", cleanCity)
-            .apply()
+            .commit()
 
         startHome(cleanCity)
     }
 
     private fun startHome(cityName: String) {
-        val intent = Intent(this, HomeActivity::class.java)
-        intent.putExtra("city_name", cityName)
-        startActivity(intent)
-        finish()
+        val activity = requireActivity() as WeatherActivity
+        activity.switchToPage(0) // assuming HomeFragment is at index 0
     }
+
+
 
     private fun updateRecentUI(container: LinearLayout, recentList: ArrayList<String>, searchText: EditText) {
         container.removeAllViews()
 
         for (item in recentList) {
-            val tag = TextView(this)
+            val tag = TextView(requireContext())
             tag.text = item
             tag.setTextColor(Color.WHITE)
             tag.setPadding(30, 20, 30, 20)
@@ -183,7 +187,7 @@ class SearchActivity : AppCompatActivity() {
     }
 
     private fun hideKeyboard(editText: EditText) {
-        val imm = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+        val imm = requireContext().getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(editText.windowToken, 0)
     }
 }
